@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script type = "text/javascript" src = "https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+    </head>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <body>
+        <script>
+            const WIDTH_SCALE = 128;
+            const TIME_SCALE = 0.000004;
+            const MAX_TIME = 10000000; // nsec
+            const MAX_TIME_SCALE = MAX_TIME * TIME_SCALE;
+            const TIME_INTERVAL = 1000000; // nsec
+
+            const LEFT_SPACE = 100;
+            const TOP_SPACE = 50;
+
+            const DRAM_BANDWIDTH = 0.8;
+            const EXECUTION_WIDTH = 0.8; // if you use real execution width, the gantt chart hard to figure out.
+
+            const DRAM_BANDWIDTH_SCALE = WIDTH_SCALE * DRAM_BANDWIDTH;
+            const EXECUTION_WIDTH_SCALE = WIDTH_SCALE * EXECUTION_WIDTH;
+
+            const X_LOC_DRAM = 0;
+            const X_LOC_EXECUTION = X_LOC_DRAM + DRAM_BANDWIDTH_SCALE;
+
+            const STROKE_WIDTH = 0.2;
+
+            const DATASET_PATH = 'timestamp.json'
+
+            const INPUT_LOAD_DEFAULT_COLOR = 'red';
+            const WEIGHT_LOAD_DEFAULT_COLOR = 'lightblue';
+            const OUTPUT_STORE_DEFAULT_COLOR = 'coral';
+            const EXECUTION_DEFAULT_COLOR = 'green';
+            const STROKE_COLOR = 'black';
+
+            const TYPES = ['MEMORY', 'COMPUTATION'];
+
+            let dataset = [];
+            d3.json("timestamp.json", function(error, data){
+                if (error) throw error;
+                //console.log(data);
+                dataset = data;
+                console.log('dataset generation is completed.');
+                //console.log(dataset);
+
+                let timeline = d3.select('body')
+                .append('div')
+                .attr('id', 'timeline')
+                .append('svg')
+                .attr('width', '100vw')
+                .attr('height', MAX_TIME_SCALE + 'vh');
+
+                let xScale = d3.scaleBand()
+                .domain(TYPES)
+                .range([0, TYPES.length * DRAM_BANDWIDTH_SCALE]);
+                let yScale = d3.scaleLinear()
+                .domain([0, MAX_TIME])
+                .range([0, document.getElementById('timeline').offsetHeight]);
+
+                let bar = timeline.selectAll('rect')
+                .data(dataset)
+                .enter()
+                .append('rect')
+                .attr('width', function(d){
+                    if (d.type == 'MEMORY') {
+                        return DRAM_BANDWIDTH_SCALE;
+                    } else if (d.type == 'EXECUTION') {
+                        return EXECUTION_WIDTH_SCALE;
+                    } else if (d.type == 'END') {
+                        console.log('Reach END.');
+                    } else {
+                        console.log('Wrong type error(0): ' + d.type);
+                        assert(false);
+                    }
+                })
+                .attr('height', function(d){
+                    return yScale(parseInt(d.end) - parseInt(d.start));
+                })
+                .attr('x', function(d){
+                    if (d.type == 'MEMORY') {
+                        return X_LOC_DRAM;
+                    } else if (d.type == 'EXECUTION') {
+                        return X_LOC_EXECUTION;
+                    } else if (d.type == 'END') {
+                        console.log('Reach END.');
+                    } else {
+                        console.log('Wrong type error(1): ' + d.type);
+                        assert(false);
+                    }
+                })
+                .attr('y', function(d){
+                    return yScale(parseInt(d.start));
+                })
+                .attr('transform', 'translate(' + (LEFT_SPACE + STROKE_WIDTH) +
+                ',' + (TOP_SPACE + STROKE_WIDTH) + ')')
+                .style('fill', function(d){
+                    if (d.hasOwnProperty('color')) {
+                        return d.color;
+                    } else {
+                        if (d.type == 'MEMORY') {
+                            if (d.datatype == 'INPUT') {
+                                return INPUT_LOAD_DEFAULT_COLOR;
+                            } else if (d.datatype == 'WEIGHT') {
+                                return WEIGHT_LOAD_DEFAULT_COLOR;
+                            } else if (d.datatype == 'OUTPUT') {
+                                return OUTPUT_STORE_DEFAULT_COLOR;
+                            } else {
+                                console.log('Wrong data type error(' +
+                                d.datatype + ')');
+                                assert(false);
+                            }
+                        } else if (d.type == 'EXECUTION') {
+                            return EXECUTION_DEFAULT_COLOR;
+                        } else if (d.type == 'END') {
+                            console.log('Reach END.');
+                        } else {
+                            console.log('Wrong type ')
+                        }
+                    }
+                })
+                .attr('stroke-width', STROKE_WIDTH)
+                .attr('stroke', STROKE_COLOR)
+                .on('mouseover', handleMouseOver)
+                .on('mouseout', handleMouseOut);
+
+                let titles = bar.append('title').text(function(d){
+                    return makeTitles(d);
+                });
+
+                let xAxis = d3.select('svg')
+                .append('g')
+                .attr('transform', 'translate(' + LEFT_SPACE + ',' + 
+                TOP_SPACE + ')')
+                .call(d3.axisTop(xScale));
+                let yAxis = d3.select('svg')
+                .append('g')
+                .attr('transform', 'translate(' + LEFT_SPACE + ',' +
+                TOP_SPACE + ')')
+                .call(d3.axisLeft(yScale).ticks(MAX_TIME / TIME_INTERVAL));
+            });
+
+            function handleMouseOver()
+            {
+                d3.select(this)
+                .attr('stroke-width', STROKE_WIDTH * 2)
+                .style('filter', 'brightness(50%%)')
+                .select('.tooltiptext')
+                .style('visibility', 'visible');
+            }
+
+            function handleMouseOut()
+            {
+                d3.select(this)
+                .attr('stroke-width', STROKE_WIDTH)
+                .style('filter', 'brightness(100%%)')
+                .select('.tooltiptext')
+                .style('visibility', 'hidden');
+            }
+
+            function makeTitles(data)
+            {
+                if (data.type == 'EXECUTION') {
+                    return '[' + data.start + ', ' + data.end + ', ' +
+                    data.type + ', ' + data.amount + ' MACS]';
+                } else if (data.type == 'MEMORY') {
+                    return '[' + data.start + ', ' + data.end + ', ' +
+                    data.datatype + ', ' + data.amount + ' Bytes]';
+                } else if (data.type == 'END') {
+                    console.log('Reach END.');
+                } else {
+                    console.log('Wrong type error(2): ' + data.type);
+                    assert(false);
+                }
+            }
+        </script>
+    </body>
+</html>

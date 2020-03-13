@@ -1,0 +1,16 @@
+{
+  "mac_cycles": 1,
+  "bandwidth": 0.51,
+  "frequency": 3.6,
+  "mac_energy": 0.0008,
+  "on_chip_energy_32": 0.005,
+  "off_chip_energy_32": 0.64,
+  "mem_size": [512, 256, 512],
+  "pe_dim": [
+    [1, 1]
+  ],
+  "pe_structure": [
+    ["IC"],
+    ["OC"]
+  ]
+}

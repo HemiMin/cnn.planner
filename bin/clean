@@ -1,0 +1,8 @@
+#!/bin/bash
+
+HOME_DIR=`pwd`/../
+BUILD_DIR=$HOME_DIR/build
+DOXYGEN_HTML_DIR=$HOME_DIR/docs/html
+DOXYGEN_LATEX_DIR=$HOME_DIR/docs/latex
+
+rm -rf $BUILD_DIR $DOXYGEN_HTML_DIR $DOXYGEN_LATEX_DIR

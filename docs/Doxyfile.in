@@ -1,0 +1,13 @@
+PROJECT_NAME           = "@CMAKE_PROJECT_NAME@"                                 
+PROJECT_NUMBER         = @VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@        
+STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@                                   
+OUTPUT_DIRECTORY       = @PROJECT_SOURCE_DIR@/docs
+INPUT                  = @PROJECT_SOURCE_DIR@/README.md \                                     
+                         @PROJECT_SOURCE_DIR@/include \
+                         @PROJECT_SOURCE_DIR@/src \
+                         @PROJECT_SOURCE_DIR@/python
+FILE_PATTERNS          = *.h *.cc *.py
+RECURSIVE              = YES                                                    
+USE_MDFILE_AS_MAINPAGE = @PROJECT_SOURCE_DIR@/README.md   
+ENABLE_PREPROCESSING   = YES
+PREDEFINED             = MANUAL

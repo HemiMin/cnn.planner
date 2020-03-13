@@ -1,0 +1,11 @@
+#!/bin/bash
+
+HOME_DIR=`pwd`/..
+BUILD_DIR=$HOME_DIR/build
+
+if [ ! -d "$BUILD_DIR" ]; then
+  mkdir $BUILD_DIR
+fi
+cd $BUILD_DIR
+cmake ..
+make
